@@ -8,24 +8,25 @@ class Alexa {
     public static void main(String[] args) throws InterruptedException {
         BlockingQueue<String> commands = new LinkedBlockingDeque();
         BlockingQueue<String> response = new LinkedBlockingDeque();
-        String takeString;
-
-//		while(command!=null) {
-//			Scanner input2 = new Scanner(System.in);
-//			System.out.print("Enter your input: ");
-//			String command2 = input2.nextLine().toLowerCase();
-//			commands.put(command2);
-//		}
+        System.out.println("Instruction:");
+        System.out.println("This Alexa allow the key word such as 'add', 'remove' and some of their synonyms, but the typo is not allow.");
+        System.out.println("This Alexa cannot process the multiple command concurrently, you cannot enter such like\" Hi Alexa, add the apple into the shopping list\"");
+        System.out.println("Because it only has one state when it receive the command.");
+        System.out.println("===========================================================");
         Thread inputThread = new Thread() {
             public void run() {
                 try {
                     do {
-                        Scanner input = new Scanner(System.in);
-                        System.out.print("Enter your input: ");
-                        String command = input.nextLine().toLowerCase();
-                        commands.put(command);
+                        String commandstr;
+                        do {
+                            Scanner input = new Scanner(System.in);
+                            System.out.print("Alexa is sleeping... Enter your input (Use 'Alexa' to awake Alexa): ");
+                            String command = input.nextLine().toLowerCase();
+                            commandstr = command;
+                        } while (!commandstr.toLowerCase().contains("alexa"));
+                        commands.put(commandstr);
                         Thread.sleep(2000);
-                    }while(response.take()!=null);
+                    } while (Boolean.parseBoolean(response.take()));
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -52,27 +53,31 @@ class Alexa {
 
     public static void Alexa_run(BlockingQueue<String> commands, BlockingQueue<String> response)
             throws InterruptedException {
-        String takeString = commands.take();
-        if (takeString.toLowerCase().contains("alexa")) {
+        String takenString = commands.take();
+        if (takenString.toLowerCase().contains("alexa")) {
             System.out.println("Alexa is running...");
             System.out.println("----------------------------");
-            skill s = new skill(takeString);
-            String takestring;
+            skill s = new skill(takenString);
+            boolean if_running = true;
             do {
+                System.out.println("Alexa received your command. ");
                 s.determine_state();
                 if (s.state_comfirm()) {
                     s.state_process();
                 } else {
+                    if_running = false;
                     System.out.println("----------------------------");
+                    System.out.println("ByeBye");
                     System.out.println("Alexa is closed...");
                 }
-                response.put("finished");
-                takeString = commands.take();
-                s.setcommand(takeString);
-            } while (takeString != null);
+                response.put(String.valueOf(if_running));
+                if (if_running) {
+                    takenString = commands.take();
+                }
+                s.setcommand(takenString);
+            } while (takenString != null && if_running);
         }
 
     }
 }
-
 
